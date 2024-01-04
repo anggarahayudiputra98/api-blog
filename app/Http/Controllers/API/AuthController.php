@@ -16,13 +16,13 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:users',
             'email' => 'required|string|max:255|unique:users',
             'password' => 'required|string|min:8'
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors());
+            return response()->json(['message' => $validator->errors()->first()], 400);
         }
 
         $user = User::create([
@@ -41,21 +41,35 @@ class AuthController extends Controller
     }
 
     public function login(Request $request){
+        // $validator = Validator::make($request->all(), [
+        //     'email' => 'required|email',
+        //     'password' => 'required'
+        // ]);
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        // if ($validator->fails()) {
+        //     return response()->json(['message' => $validator->errors()->first()], 400);
+        // }
+
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
+
+        if (Auth::attempt($credentials)) {
+            $user = User::where('email', $request->email)->firstOrFail();
+            $token = $user->createToken('auth_token')->plainTextToken;
+
             return response()->json([
-                'message' => 'Unauthorized'
-            ], 401);
+                'data' => $user,
+                'access_token' => $token,
+                'token_type' => 'Bearer'
+            ]);
         }
 
-        $user = User::where('email', $request->email)->firstOrFail();
-        $token = $user->createToken('auth_token')->plainTextToken;
-
         return response()->json([
-            'message' => 'Login success',
-            'access_token' => $token,
-            'token_type' => 'Bearer'
-        ]);
+            'message' => 'The provided credentials do not match our records.',
+        ], 401);
+
     }
 
     public function logout()

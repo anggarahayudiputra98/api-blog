@@ -14,10 +14,15 @@ class Article extends Model
         'title',
         'content',
         'image',
-        'status'
+        'status',
+        'created_by'
     ];
 
-    public function Tags(){
+    public function tags(){
         return $this->belongsToMany(Tag::class, 'article_tag');
+    }
+
+    public function writter(){
+        return $this->hasOne(User::class, 'id','created_by');
     }
 }
