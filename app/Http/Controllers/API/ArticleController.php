@@ -94,14 +94,16 @@ class ArticleController extends Controller
             return response(['message' => $validator->errors()->first()], 400);
         }
 
+
         $article = Article::with('tags')
         ->when($request->title, function($q) use ($request){
-            return $q->where('title', $request->title);
+            return $q->where('title','like','%'.$request->title.'%');
         })
         ->when($request->id, function($q) use ($request){
             return $q->where('id', $request->id);
         })
         ->first();
+
         if(!$article){
             return response()->json(['message' => 'Data not found'], 404);
         }
